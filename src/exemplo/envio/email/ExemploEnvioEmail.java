@@ -5,6 +5,7 @@
 
 package exemplo.envio.email;
 
+import java.awt.FlowLayout;
 import java.util.Properties;
 import javax.mail.Message;
 import javax.mail.Session;
@@ -14,10 +15,12 @@ import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 
 //Permitir acesso em:
 //https://myaccount.google.com/lesssecureapps
@@ -28,7 +31,11 @@ public class ExemploEnvioEmail {
     public static Session getMailSession;
     public static Message message;
     public static MimeMessage generateMailMessage;
-    public static JPasswordField pass;
+    public static JTextField campoEmail;
+    public static JPasswordField campoSenha;
+    public static JPanel panel;
+    public static JLabel labelEmail;
+    public static JLabel labelSenha;
     public static String senha;
     public static String email;
 
@@ -42,65 +49,72 @@ public class ExemploEnvioEmail {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.port", "465");
 
-        email  = JOptionPane.showInputDialog(null, "Insira o seu e-mail", "Login", 
-                                             JOptionPane.INFORMATION_MESSAGE);
-        JPanel panel = new JPanel();
-        JLabel label = new JLabel("Digite a senha");
-        pass = new JPasswordField(10);
-        pass.requestFocus(true);
-        panel.add(label);
-        panel.add(pass);
-        String[] options = new String[]{"OK", "Cancelar"};
-        int option = JOptionPane.showOptionDialog(null, panel, "Login",
+        panel = new JPanel();
+        labelEmail = new JLabel("Email");
+        labelSenha = new JLabel("Senha");
+        campoEmail = new JTextField(20);
+        campoSenha = new JPasswordField(20);
+                
+        panel.add(labelEmail);
+        panel.add(campoEmail);
+        //Separador entre campos
+        panel.add(Box.createVerticalStrut(15));
+        panel.add(labelSenha);
+        panel.add(campoSenha);
+        
+        String[] opcoes = new String[]{"OK", "Cancelar"};
+        int resultado = JOptionPane.showOptionDialog(null, panel, "Login",
                      JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE,
-                     null, options, options[1]);
+                     null, opcoes, opcoes[1]);
         
         //Caso selecione OK
-        if (option == 0)
+        if (resultado == JOptionPane.OK_OPTION)
         {
-            char[] password = pass.getPassword();
+            email = campoEmail.getText();
+            char[] password = campoSenha.getPassword();
             senha = new String(password);
-        }
+            if (!email.isEmpty() && !senha.isEmpty()) {
+                Session session;
+                session = Session.getDefaultInstance(props,
+                        new javax.mail.Authenticator() {
+                            @Override
+                            protected PasswordAuthentication getPasswordAuthentication() {
+                                return new PasswordAuthentication(email, senha);
+                            }
+                        });
 
-        if (!email.isEmpty() && !senha.isEmpty()) {
-            Session session;
-            session = Session.getDefaultInstance(props,
-                    new javax.mail.Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(email, senha);
-                        }
-                    });
+                // Ativa Debug para sessão
+                session.setDebug(true);
 
-            // Ativa Debug para sessão
-            session.setDebug(true);
+                try {
+                    message = new MimeMessage(session);
+                    message.setFrom(new InternetAddress(email)); //Remetente
 
-            try {
-                message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(email)); //Remetente
-                    
-                //Destinatário(s)
-                /*Para adicionar novos destinatários, concatenar em string
-                /separando por vírgulas*/
-                Address[] toUser = InternetAddress 
-                        .parse(email);
+                    //Destinatário(s)
+                    /*Para adicionar novos destinatários, concatenar em string
+                    /separando por vírgulas*/
+                    Address[] toUser = InternetAddress 
+                            .parse(email);
 
-                message.setRecipients(Message.RecipientType.TO, toUser);
-                
-                //Assunto
-                message.setSubject("Enviando email com JavaMail");
-                
-                //Corpo do Email
-                message.setText("Enviei este email utilizando JavaMail com minha conta GMail!");
-                
-                // Método para enviar a mensagem criada
-                Transport.send(message);
+                    message.setRecipients(Message.RecipientType.TO, toUser);
 
-                System.out.println("Feito!!!");
+                    //Assunto
+                    message.setSubject("Enviando email com JavaMail");
 
-            } catch (MessagingException e) {
-                System.out.println("Ocorreu um erro ao enviar o e-mail: \n" + e);
+                    //Corpo do Email
+                    message.setText("Enviei este email utilizando JavaMail com minha conta Gmail!");
+
+                    // Método para enviar a mensagem criada
+                    Transport.send(message);
+
+                    System.out.println("Feito!!!");
+
+                } catch (MessagingException e) {
+                    System.out.println("Ocorreu um erro ao enviar o e-mail: \n" + e);
+                }
             }
+        } else {
+            JOptionPane.showMessageDialog(null, "Login cancelado.");
         }
     }
 }
